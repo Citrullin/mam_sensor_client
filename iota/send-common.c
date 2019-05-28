@@ -146,17 +146,18 @@ retcode_t mam_example_write_header_on_endpoint(mam_api_t* const api, tryte_t con
 retcode_t mam_example_write_packet(mam_api_t* const api, bundle_transactions_t* const bundle, char const* const payload,
                                    size_t payload_size, trit_t const* const msg_id, bool is_last_packet) {
   retcode_t ret = RC_OK;
-  int payload_trytes_size = (payload_size * NUMBER_OF_TRITS_IN_A_BYTE)/3;
+  int payload_trytes_size = (payload_size * NUMBER_OF_TRITS_IN_A_BYTE)/NUMBER_OF_TRITS_IN_A_TRYTE;
   tryte_t* payload_trytes = (tryte_t*)malloc(payload_trytes_size * sizeof(tryte_t));
 
   ascii_to_trytes(payload, payload_trytes);
 
+  fprintf(stderr, "Payload trytes size: %i\n", payload_trytes_size);
   for (size_t i = 0; i < payload_trytes_size; i++) {
       fprintf(stderr, "%c", payload_trytes[i]);
   }
-    fprintf(stderr, "%c", '\n');
+  fprintf(stderr, "%c", '\n');
 
-  if ((ret = mam_api_bundle_write_packet(api, msg_id, payload_trytes, (payload_size * NUMBER_OF_TRITS_IN_A_BYTE)/3, 0, is_last_packet,
+  if ((ret = mam_api_bundle_write_packet(api, msg_id, payload_trytes, payload_trytes_size, 0, is_last_packet,
                                          bundle)) != RC_OK) {
     return ret;
   }
