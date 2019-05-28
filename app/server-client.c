@@ -26,8 +26,8 @@
 //tmp
 #include <errno.h>
 
-#define IOTA_HOST "node05.iotatoken.nl"
-#define IOTA_PORT 16265
+#define IOTA_HOST "node.deviceproof.org"
+#define IOTA_PORT 14265
 #define IOTA_SEED "RTYNARMDLBLMOWRFCEEFMJFFLCTAHWEBKSPJQGHMHCSQPVUI9NDZMJITSGAZOGRGHGZRKSPCPWAWTVPXA"
 
 
