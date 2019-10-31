@@ -12,157 +12,146 @@
 
 #include "send-common.h"
 
-retcode_t mam_example_announce_new_channel(mam_api_t* const api, tryte_t const* const channel_id,
-                                           bundle_transactions_t* const bundle, trit_t* const msg_id,
-                                           tryte_t* const new_channel_id) {
-  retcode_t ret = RC_OK;
-  tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / NUMBER_OF_TRITS_IN_A_TRYTE];
-  mam_psk_t_set_t psks = NULL;
+retcode_t mam_example_announce_channel(mam_api_t* const api, tryte_t const* const channel_id,
+                                       bundle_transactions_t* const bundle, trit_t* const msg_id,
+                                       tryte_t* const new_channel_id) {
+    retcode_t ret = RC_OK;
+    tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / NUMBER_OF_TRITS_IN_A_TRYTE];
+    mam_psk_t_set_t psks = NULL;
 
-  if (!mam_psk_t_set_contains(&psks, &psk)) {
-    if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
-      return ret;
+    if (!mam_psk_t_set_contains(psks, &psk)) {
+        if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
+            return ret;
+        }
     }
-  }
 
-  ERR_BIND_RETURN(mam_api_create_channel(api, MAM_EXAMPLES_MSS_HEIGHT, new_channel_id), ret);
+    ERR_BIND_RETURN(mam_api_channel_create(api, MAM_EXAMPLES_MSS_HEIGHT, new_channel_id), ret);
 
-  if ((ret = mam_api_bundle_announce_new_channel(api, channel_id, new_channel_id, psks, NULL, 0, bundle, msg_id)) !=
-      RC_OK) {
+    if ((ret = mam_api_bundle_announce_channel(api, channel_id, new_channel_id, psks, NULL, bundle, msg_id)) != RC_OK) {
+        return ret;
+    }
+    mam_psk_t_set_free(&psks);
+
+    trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
+    fprintf(stderr, "Message ID: ");
+    for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
+        fprintf(stderr, "%c", msg_id_trytes[i]);
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "CH1 ID: ");
+    for (size_t i = 0; i < MAM_CHANNEL_ID_TRYTE_SIZE; i++) {
+        fprintf(stderr, "%c", new_channel_id[i]);
+    }
+    fprintf(stderr, "\n");
+
     return ret;
-  }
-  mam_psk_t_set_free(&psks);
-
-  trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
-  fprintf(stderr, "Message ID: ");
-  for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
-    fprintf(stderr, "%c", msg_id_trytes[i]);
-  }
-  fprintf(stderr, "\n");
-
-  fprintf(stderr, "CH1 ID: ");
-  for (size_t i = 0; i < MAM_CHANNEL_ID_SIZE / 3; i++) {
-    fprintf(stderr, "%c", new_channel_id[i]);
-  }
-  fprintf(stderr, "\n");
-
-  return ret;
 }
 
-retcode_t mam_example_announce_new_endpoint(mam_api_t* const api, tryte_t const* const channel_id,
-                                            bundle_transactions_t* const bundle, trit_t* const msg_id,
-                                            tryte_t* const new_endpoint_id) {
-  retcode_t ret = RC_OK;
-  tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / NUMBER_OF_TRITS_IN_A_TRYTE];
-  mam_psk_t_set_t psks = NULL;
+retcode_t mam_example_announce_endpoint(mam_api_t* const api, tryte_t const* const channel_id,
+                                        bundle_transactions_t* const bundle, trit_t* const msg_id,
+                                        tryte_t* const new_endpoint_id) {
+    retcode_t ret = RC_OK;
+    tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / NUMBER_OF_TRITS_IN_A_TRYTE];
+    mam_psk_t_set_t psks = NULL;
 
-  if (!mam_psk_t_set_contains(&psks, &psk)) {
-    if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
-      return ret;
+    if (!mam_psk_t_set_contains(psks, &psk)) {
+        if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
+            return ret;
+        }
     }
-  }
 
-  ERR_BIND_RETURN(mam_api_create_endpoint(api, MAM_EXAMPLES_MSS_HEIGHT, channel_id, new_endpoint_id), ret);
+    ERR_BIND_RETURN(mam_api_endpoint_create(api, MAM_EXAMPLES_MSS_HEIGHT, channel_id, new_endpoint_id), ret);
 
-  if ((ret = mam_api_bundle_announce_new_endpoint(api, channel_id, new_endpoint_id, psks, NULL, 0, bundle, msg_id)) !=
-      RC_OK) {
+    if ((ret = mam_api_bundle_announce_endpoint(api, channel_id, new_endpoint_id, psks, NULL, bundle, msg_id)) != RC_OK) {
+        return ret;
+    }
+    mam_psk_t_set_free(&psks);
+
+    trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
+    fprintf(stderr, "Message ID: ");
+    for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
+        fprintf(stderr, "%c", msg_id_trytes[i]);
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "EP1 ID: ");
+    for (size_t i = 0; i < MAM_ENDPOINT_ID_TRYTE_SIZE; i++) {
+        fprintf(stderr, "%c", new_endpoint_id[i]);
+    }
+    fprintf(stderr, "\n");
+
     return ret;
-  }
-  mam_psk_t_set_free(&psks);
-
-  trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
-  fprintf(stderr, "Message ID: ");
-  for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
-    fprintf(stderr, "%c", msg_id_trytes[i]);
-  }
-  fprintf(stderr, "\n");
-
-  fprintf(stderr, "EP1 ID: ");
-  for (size_t i = 0; i < MAM_ENDPOINT_ID_SIZE / 3; i++) {
-    fprintf(stderr, "%c", new_endpoint_id[i]);
-  }
-  fprintf(stderr, "\n");
-
-  return ret;
 }
 
 retcode_t mam_example_write_header_on_channel(mam_api_t* const api, tryte_t const* const channel_id,
                                               bundle_transactions_t* const bundle, trit_t* const msg_id) {
-  retcode_t ret = RC_OK;
-  tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / 3];
-  mam_psk_t_set_t psks = NULL;
+    retcode_t ret = RC_OK;
+    tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / 3];
+    mam_psk_t_set_t psks = NULL;
 
-  if (!mam_psk_t_set_contains(&psks, &psk)) {
-    if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
-      return ret;
+    if (!mam_psk_t_set_contains(psks, &psk)) {
+        if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
+            return ret;
+        }
     }
-  }
 
-  if ((ret = mam_api_bundle_write_header_on_channel(api, channel_id, psks, NULL, 0, bundle, msg_id)) != RC_OK) {
+    if ((ret = mam_api_bundle_write_header_on_channel(api, channel_id, psks, NULL, bundle, msg_id)) != RC_OK) {
+        return ret;
+    }
+    mam_psk_t_set_free(&psks);
+
+    trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
+    fprintf(stderr, "Message ID: ");
+    for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
+        fprintf(stderr, "%c", msg_id_trytes[i]);
+    }
+    fprintf(stderr, "\n");
+
     return ret;
-  }
-  mam_psk_t_set_free(&psks);
-
-  trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
-  fprintf(stderr, "Message ID: ");
-  for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
-    fprintf(stderr, "%c", msg_id_trytes[i]);
-  }
-  fprintf(stderr, "\n");
-
-  return ret;
 }
 
 retcode_t mam_example_write_header_on_endpoint(mam_api_t* const api, tryte_t const* const channel_id,
                                                tryte_t const* const endpoint_id, bundle_transactions_t* const bundle,
                                                trit_t* const msg_id) {
-  retcode_t ret = RC_OK;
-  tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / 3];
-  mam_psk_t_set_t psks = NULL;
+    retcode_t ret = RC_OK;
+    tryte_t msg_id_trytes[MAM_MSG_ID_SIZE / 3];
+    mam_psk_t_set_t psks = NULL;
 
-  if (!mam_psk_t_set_contains(&psks, &psk)) {
-    if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
-      return ret;
+    if (!mam_psk_t_set_contains(psks, &psk)) {
+        if ((ret = mam_psk_t_set_add(&psks, &psk)) != RC_OK) {
+            return ret;
+        }
     }
-  }
 
-  if ((ret = mam_api_bundle_write_header_on_endpoint(api, channel_id, endpoint_id, psks, NULL, 0, bundle, msg_id)) !=
-      RC_OK) {
+    if ((ret = mam_api_bundle_write_header_on_endpoint(api, channel_id, endpoint_id, psks, NULL, bundle, msg_id)) !=
+        RC_OK) {
+        return ret;
+    }
+
+    mam_psk_t_set_free(&psks);
+
+    trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
+    fprintf(stderr, "Message ID: ");
+    for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
+        fprintf(stderr, "%c", msg_id_trytes[i]);
+    }
+    fprintf(stderr, "\n");
+
     return ret;
-  }
-
-  mam_psk_t_set_free(&psks);
-
-  trits_to_trytes(msg_id, msg_id_trytes, MAM_MSG_ID_SIZE);
-  fprintf(stderr, "Message ID: ");
-  for (size_t i = 0; i < MAM_MSG_ID_SIZE / 3; i++) {
-    fprintf(stderr, "%c", msg_id_trytes[i]);
-  }
-  fprintf(stderr, "\n");
-
-  return ret;
 }
 
 retcode_t mam_example_write_packet(mam_api_t* const api, bundle_transactions_t* const bundle, char const* const payload,
                                    size_t payload_size, trit_t const* const msg_id, bool is_last_packet) {
-  retcode_t ret = RC_OK;
-  tryte_t* payload_trytes = (tryte_t*)malloc((payload_size * NUMBER_OF_TRITS_IN_A_BYTE)/3 * sizeof(tryte_t));
+    retcode_t ret = RC_OK;
+    tryte_t* payload_trytes = (tryte_t*)malloc(2 * payload_size * sizeof(tryte_t));
 
-  trit_t* payload_trits = (tryte_t*)malloc(payload_size * NUMBER_OF_TRITS_IN_A_BYTE * sizeof(trit_t));
-  bytes_to_trits((byte_t *) payload, payload_size, payload_trits, payload_size * NUMBER_OF_TRITS_IN_A_BYTE);
+    ascii_to_trytes(payload, payload_trytes);
+    if ((ret = mam_api_bundle_write_packet(api, msg_id, payload_trytes, payload_size * 2, 0, is_last_packet,
+                                           bundle)) != RC_OK) {
+        return ret;
+    }
+    free(payload_trytes);
 
-  trits_to_trytes(payload_trits, payload_trytes, payload_size * NUMBER_OF_TRITS_IN_A_BYTE);
-
-  for (size_t i = 0; i < (payload_size * NUMBER_OF_TRITS_IN_A_BYTE)/3; i++) {
-      fprintf(stderr, "%c", payload_trytes[i]);
-  }
-    fprintf(stderr, "%c", '\n');
-
-  if ((ret = mam_api_bundle_write_packet(api, msg_id, payload_trytes, (payload_size * NUMBER_OF_TRITS_IN_A_BYTE)/3, 0, is_last_packet,
-                                         bundle)) != RC_OK) {
     return ret;
-  }
-  free(payload_trytes);
-
-  return ret;
 }

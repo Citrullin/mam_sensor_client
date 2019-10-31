@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "mam",
-    srcs = ["common.c", "send-common.c", "send-header.c", "send-msg.c"],
+    srcs = ["common.c", "send-common.c", "send-msg.c"],
     hdrs = ["common.h", "send-common.h", "send-msg.h"],
     deps = [
         "//logging:logging",
