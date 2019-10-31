@@ -9,6 +9,7 @@
 
 #include "pthread.h"
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "config.h"
 
@@ -27,6 +28,8 @@
 
 //tmp
 #include <errno.h>
+
+char iota_seed[81];
 
 sensor_node_t sensor_nodes[SENSOR_NODES_LENGTH];
 
@@ -68,12 +71,13 @@ uint8_t get_rpc_command_byte(sensor_command_t command) {
 }
 
 
-void init_sensor_config(void) {
+void init_sensor_config(int argc, char *argv[]) {
+    //iota-seed client-address sensor-address sensor-port interface-name
     sensor_node_t *node = &sensor_nodes[0];
 
-    if (inet_pton(AF_INET6, SENSOR_ADDRESS, &node->config.address.sin6_addr) == 1) // success!
+    if (inet_pton(AF_INET6, argv[3], &node->config.address.sin6_addr) == 1) // success!
     {
-        log_string("DEBUG", "sensor_config", "sensor_ipv6", SENSOR_ADDRESS);
+        log_string("DEBUG", "sensor_config", "sensor_ipv6", argv[3]);
     }
     else
     {
@@ -86,16 +90,18 @@ void init_sensor_config(void) {
 }
 
 struct sockaddr_in6 client_addr;
-void init_client(void) {
+void init_client(int argc, char *argv[]) {
+    //iota-seed client-address sensor-address sensor-port interface-name
+
     unsigned int client_addr_len = sizeof(client_addr);
     memset(&client_addr, 0, client_addr_len);
     client_addr.sin6_family = AF_INET6;
-    client_addr.sin6_port = htons(PORT);
-    client_addr.sin6_scope_id = if_nametoindex(INTERFACE_NAME);
+    client_addr.sin6_port = htons(argv[2]);
+    client_addr.sin6_scope_id = if_nametoindex(argv[5]);
 
-    if (inet_pton(AF_INET6, CLIENT_ADDRESS, &client_addr.sin6_addr) == 1) // success!
+    if (inet_pton(AF_INET6, argv[2], &client_addr.sin6_addr) == 1) // success!
     {
-        log_string("DEBUG", "client_init", "client_ipv6", CLIENT_ADDRESS);
+        log_string("DEBUG", "client_init", "client_ipv6", argv[2]);
     }
     else
     {
@@ -118,7 +124,7 @@ void init_client(void) {
         exit(1);
     }
 
-    init_sensor_config();
+    init_sensor_config(argc, argv);
 }
 
 void client_stop(void) {
@@ -203,17 +209,149 @@ void add_to_data_ring(env_sensor_data_ring_t *data_ring, env_sensor_data_t *sens
     memcpy(&data_ring->data[position], sensor_data, sizeof(env_sensor_data_t));
 }
 
-uint8_t mam_encode_buffer[MAM_ENCODE_BUFFER];
-void clear_mam_buffer(){
-    memset(mam_encode_buffer, 0, MAM_ENCODE_BUFFER);
+char json_buffer[JSON_BUFFER_SIZE];
+void clear_json_buffer(){
+    memset(json_buffer, 0, JSON_BUFFER_SIZE);
+}
+
+void write_temperature_to_buffer(char * buffer, environmentSensors_SingleDataPoint *data) {
+
+    char first[] = ", \"temperature\":{ \"scale\": ";
+    strcat(buffer, first);
+
+    char scale[10];
+    sprintf(scale, "%d", data->scale);
+    strncat(buffer, &scale, sizeof(int32_t));
+
+    char second[] = ", \"value\": ";
+    strcat(buffer, second);
+
+    char value[10];
+    sprintf(value, "%d", data->value);
+    strncat(buffer, &value, sizeof(int32_t));
+
+    strcat(buffer, "}");
+
+}
+
+void write_humidity_to_buffer(char * buffer, environmentSensors_SingleDataPoint *data) {
+
+    char first[] = ", \"humidity\":{ \"scale\": ";
+    strcat(buffer, first);
+
+    char scale[10];
+    sprintf(scale, "%d", data->scale);
+    strncat(buffer, &scale, sizeof(int32_t));
+
+    char second[] = ", \"value\": ";
+    strcat(buffer, second);
+
+    char value[10];
+    sprintf(value, "%d", data->value);
+    strncat(buffer, &value, sizeof(int32_t));
+
+    strcat(buffer, "}");
+}
+
+void write_atmosphericPressure_to_buffer(char * buffer, environmentSensors_SingleDataPoint *data) {
+
+    char first[] = ", \"atmosphericPressure\":{ \"scale\": ";
+    strcat(buffer, first);
+
+    char scale[10];
+    sprintf(scale, "%d", data->scale);
+    strncat(buffer, &scale, sizeof(int32_t));
+
+    char second[] = ", \"value\": ";
+    strcat(buffer, second);
+
+    char value[10];
+    sprintf(value, "%d", data->value);
+    strncat(buffer, &value, sizeof(int32_t));
+
+    strcat(buffer, "}");
+
+}
+
+void write_pm2_5_to_buffer(char * buffer, environmentSensors_SingleDataPoint *data) {
+
+    char first[] = ", \"pm2_5\":{ \"scale\": ";
+    strcat(buffer, first);
+
+    char scale[10];
+    sprintf(scale, "%d", data->scale);
+    strncat(buffer, &scale, sizeof(int32_t));
+
+    char second[] = ", \"value\": ";
+    strcat(buffer, second);
+
+    char value[10];
+    sprintf(value, "%d", data->value);
+    strncat(buffer, &value, sizeof(int32_t));
+
+    strcat(buffer, "}");
+
+}
+
+void write_data_response_to_buffer(char * buffer, environmentSensors_DataResponse *data_response) {
+
+    if(data_response->has_temperature){
+        char first[] = "{\"hasTemperature\": \"true\" ";
+        strcpy(buffer, first);
+
+        write_temperature_to_buffer(buffer, &data_response->temperature);
+    }else{
+        char first[] = "{\"hasTemperature\": \"false\" ";
+        strcpy(json_buffer, first);
+        strcat(buffer, first);
+    }
+
+    if(data_response->has_humidity){
+        char second[] = ", \"hasHumidity\": \"true\" ";
+        strcat(buffer, second);
+
+        write_humidity_to_buffer(buffer, &data_response->temperature);
+    }else{
+        char second[] = ", \"hasHumidity\": \"false\" ";
+        strcat(buffer, second);
+    }
+
+    if(data_response->has_atmosphericPressure){
+        char third[] = ", \"hasAtmosphericPressure\": \"true\" ";
+        strcat(buffer, third);
+
+        write_atmosphericPressure_to_buffer(buffer, &data_response->temperature);
+    }else{
+        char third[] = ", \"hasAtmosphericPressure\": \"false\" ";
+        strcat(buffer, third);
+    }
+
+    if(data_response->has_pm2_5){
+        char fourth[] = ", \"hasPm2_5\": \"true\" ";
+        strcat(buffer, fourth);
+
+        write_pm2_5_to_buffer(buffer, &data_response->temperature);
+    }else{
+        char fourth[] = ", \"hasPm2_5\": \"false\" ";
+        strcat(buffer, fourth);
+    }
+
+    strcat(buffer, "}");
+
 }
 
 void send_to_tangle(environmentSensors_DataResponse *data_response) {
-    clear_mam_buffer();
-    size_t encoded_size = env_sensor_data_response_encode((uint8_t *) &mam_encode_buffer, MAM_ENCODE_BUFFER, data_response);
+    clear_json_buffer();
 
-    log_hex_array("DEBUG", "send_to_tangle", "mam_buffer", (uint8_t *) &mam_encode_buffer, encoded_size);
-    mam_send_message(IOTA_HOST, IOTA_PORT, IOTA_SEED, (char *) &mam_encode_buffer, encoded_size, true);
+    write_data_response_to_buffer(json_buffer, data_response);
+
+    int json_size = strlen(json_buffer);
+    log_int("DEBUG", "send_to_tangle", "json_buffer_size", json_size);
+
+    log_string("DEBUG", "send_to_tangle", "json_buffer", json_buffer);
+    json_buffer[json_size] = '\0';
+
+    mam_send_message(IOTA_HOST, IOTA_PORT, iota_seed, json_buffer, json_size, true);
 }
 
 void handle_data_response(struct sockaddr_in6 *server_addr_ptr, uint8_t *socket_buffer_ptr, int buffer_length) {
@@ -228,7 +366,7 @@ void handle_data_response(struct sockaddr_in6 *server_addr_ptr, uint8_t *socket_
             }
 
             env_sensor_data_t sensor_data = {
-                    .humanity = get_scaled_value(&data_response.humanity),
+                    .humidity = get_scaled_value(&data_response.humidity),
                     .temperature = get_scaled_value(&data_response.temperature),
                     .pm2_5 = get_scaled_value(&data_response.pm2_5),
                     .atmosphericPressure = get_scaled_value(&data_response.atmosphericPressure),
@@ -247,7 +385,7 @@ void handle_feature_response(struct sockaddr_in6 *server_addr_ptr, uint8_t *sock
     for(int i = 0; i < SENSOR_NODES_LENGTH; i++) {
         if(check_ip_address(sensor_nodes[i].config.address.sin6_addr.s6_addr, server_addr_ptr->sin6_addr.s6_addr)) {
             sensor_nodes[i].features.hasAtmosphericPressure = feature_response.hasAtmosphericPressure;
-            sensor_nodes[i].features.hasHumanity = feature_response.hasHumanity;
+            sensor_nodes[i].features.hasHumidity = feature_response.hasHumidity;
             sensor_nodes[i].features.hasTemperature = feature_response.hasTemperature;
             sensor_nodes[i].features.has2_5 = feature_response.hasPm2_5;
         }
@@ -378,8 +516,12 @@ void *run_status_thread(void *args) {
 pthread_t status_thread;
 pthread_t send_thread;
 pthread_t listing_thread;
-int main(void){
-    init_client();
+int main(int argc, char *argv[]){
+    //iota-seed client-address sensor-address sensor-port interface-name
+
+    memcpy(iota_seed, argv[1], 81);
+
+    init_client(argc, argv);
     if (listing_thread > 0) {
         puts("Server is already running.");
     } else {
