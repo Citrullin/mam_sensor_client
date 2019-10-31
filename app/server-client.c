@@ -351,7 +351,7 @@ void send_to_tangle(environmentSensors_DataResponse *data_response) {
     log_string("DEBUG", "send_to_tangle", "json_buffer", json_buffer);
     json_buffer[json_size] = '\0';
 
-    mam_send_message(IOTA_HOST, IOTA_PORT, iota_seed, json_buffer, json_size, true);
+    //mam_send_message(IOTA_HOST, IOTA_PORT, iota_seed, json_buffer, json_size, true);
 }
 
 void handle_data_response(struct sockaddr_in6 *server_addr_ptr, uint8_t *socket_buffer_ptr, int buffer_length) {

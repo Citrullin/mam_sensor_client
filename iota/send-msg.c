@@ -35,11 +35,13 @@ int mam_send_message(char *host, int port, char *seed, char *payload, size_t pay
         return EXIT_FAILURE;
     }
 
+    puts("Create bundle new transactions\n");
     bundle_transactions_new(&bundle);
 
     {
         trit_t msg_id[MAM_MSG_ID_SIZE];
 
+        puts("Writing to header files.");
         // Writing header to bundle
         if ((ret = mam_example_write_header_on_channel(&api, channel_id, bundle, msg_id)) != RC_OK) {
             fprintf(stderr, "mam_example_write_header failed with err %d\n", ret);
