@@ -35,7 +35,7 @@ retcode_t mam_example_channel_create(mam_api_t *const api, tryte_t *const channe
   }
 
   fprintf(stderr, "Address: ");
-  for (size_t i = 0; i < FLEX_TRIT_SIZE_243; i++) {
+  for (size_t i = 0; i < 81; i++) {
     fprintf(stderr, "%c", channel_id[i]);
   }
   fprintf(stderr, "\n");
