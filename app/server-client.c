@@ -10,6 +10,8 @@
 #include "pthread.h"
 #include <unistd.h>
 
+#include "config.h"
+
 #include "encode/decode.h"
 #include "encode/encode.h"
 #include "logging/logging.h"
@@ -25,25 +27,6 @@
 
 //tmp
 #include <errno.h>
-
-#define IOTA_HOST "node05.iotatoken.nl"
-#define IOTA_PORT 16265
-#define IOTA_SEED "RTYNARMDLBLMOWRFCEEFMJFFLCTAHWEBKSPJQGHMHCSQPVUI9NDZMJITSGAZOGRGHGZRKSPCPWAWTVPXA"
-
-
-#define SOCKET_BUFFER_SIZE 1024
-#define DEBUG_SERVER true
-#define PORT 8085
-
-#define MAM_ENCODE_BUFFER 2048
-
-//USB Stick
-#define CLIENT_ADDRESS { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x1a, 0x7d, 0xff, 0xfe, 0xda, 0x71, 0x13 }
-
-// Integrated BLE
-//#define CLIENT_ADDRESS { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf2, 0xd5, 0xbf, 0xff, 0xfe, 0x10, 0xf1, 0xb1 };
-
-#define SENSOR_NODES_LENGTH 1
 
 sensor_node_t sensor_nodes[SENSOR_NODES_LENGTH];
 
@@ -87,14 +70,16 @@ uint8_t get_rpc_command_byte(sensor_command_t command) {
 
 void init_sensor_config(void) {
     sensor_node_t *node = &sensor_nodes[0];
-    uint8_t address[16] = {
-            0xfe, 0x80, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
-            0x02, 0x13, 0xaf, 0xff,
-            0xfe, 0x94, 0x0d, 0x75
-    };
 
-    memcpy(&node->config.address.sin6_addr, address, 16);
+    if (inet_pton(AF_INET6, SENSOR_ADDRESS, &node->config.address.sin6_addr) == 1) // success!
+    {
+        log_string("DEBUG", "sensor_config", "sensor_ipv6", SENSOR_ADDRESS);
+    }
+    else
+    {
+        log_string("ERROR", "client_init", "sensor_ipv6", "FAILED to parse sensor IPv6!");
+    }
+
     node->config.address.sin6_family = AF_INET6;
     node->config.address.sin6_scope_id = 0x00;
     node->config.address.sin6_port = htons(51037);
@@ -106,10 +91,16 @@ void init_client(void) {
     memset(&client_addr, 0, client_addr_len);
     client_addr.sin6_family = AF_INET6;
     client_addr.sin6_port = htons(PORT);
-    client_addr.sin6_scope_id = if_nametoindex("bt0");
-    uint8_t address[16] = CLIENT_ADDRESS;
+    client_addr.sin6_scope_id = if_nametoindex(INTERFACE_NAME);
 
-    memcpy(&client_addr.sin6_addr, address, 16);
+    if (inet_pton(AF_INET6, CLIENT_ADDRESS, &client_addr.sin6_addr) == 1) // success!
+    {
+        log_string("DEBUG", "client_init", "client_ipv6", CLIENT_ADDRESS);
+    }
+    else
+    {
+        log_string("ERROR", "client_init", "client_ipv6", "FAILED to parse Client IPv6!");
+    }
 
     if (DEBUG_SERVER) {
         log_addr("DEBUG", "client_init", "client_addr", &client_addr);
